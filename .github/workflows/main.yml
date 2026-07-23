@@ -27,22 +27,27 @@ jobs:
 
     - name: Setup Android Project Files
       run: |
-        # 1. إنشاء هيكلية مشروع الأندرويد
+        # 1. إنشاء هيكلية المشروع
         mkdir -p app/src/main/java/com/hawahi/locker
         mkdir -p app/src/main/res/layout
         mkdir -p app/src/main/res/values
         mkdir -p app/src/main/res/xml
 
-        # 2. نقل ملفاتك المرفوعة
+        # 2. نسخ وملائمة جميع ملفات الجافا والتأكد من تسمية MainActivity بشكل صحيح
         find x/ -name "*.java" -exec cp {} app/src/main/java/com/hawahi/locker/ \;
-        find x/ -name "*ctivity_main.xml" -exec cp {} app/src/main/res/layout/activity_main.xml \;
-        find x/ -name "lock_screen.xml" -exec cp {} app/src/main/res/layout/ \;
-        find x/ -name "strings.xml" -exec cp {} app/src/main/res/values/ \;
-        find x/ -name "colors.xml" -exec cp {} app/src/main/res/values/ \;
-        find x/ -name "themes.xml" -exec cp {} app/src/main/res/values/ \;
-        find x/ -name "device_admin.xml" -exec cp {} app/src/main/res/xml/ \;
+        if [ -f app/src/main/java/com/hawahi/locker/ainActivity.java ]; then
+            mv app/src/main/java/com/hawahi/locker/ainActivity.java app/src/main/java/com/hawahi/locker/MainActivity.java
+        fi
 
-        # 3. إعداد ملفات Gradle وتفعيل AndroidX (حل الخطأ الحالي)
+        # 3. نسخ ملفات الـ Layout والـ Resources
+        find x/ -name "*activity_main.xml" -exec cp {} app/src/main/res/layout/activity_main.xml \;
+        find x/ -name "lock_screen.xml" -exec cp {} app/src/main/res/layout/ \; 2>/dev/null || true
+        find x/ -name "strings.xml" -exec cp {} app/src/main/res/values/ \; 2>/dev/null || true
+        find x/ -name "colors.xml" -exec cp {} app/src/main/res/values/ \; 2>/dev/null || true
+        find x/ -name "themes.xml" -exec cp {} app/src/main/res/values/ \; 2>/dev/null || true
+        find x/ -name "device_admin.xml" -exec cp {} app/src/main/res/xml/ \; 2>/dev/null || true
+
+        # 4. تفعيل AndroidX وإعداد Gradle
         echo 'android.useAndroidX=true' > gradle.properties
         echo 'android.enableJetifier=true' >> gradle.properties
 
@@ -78,7 +83,7 @@ jobs:
         }
         EOF
 
-        # 4. إنشاء ملف AndroidManifest
+        # 5. إنشاء Manifest نظيف ومتوافق
         cat << 'EOF' > app/src/main/AndroidManifest.xml
         <manifest xmlns:android="http://schemas.android.com/apk/res/android">
             <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
