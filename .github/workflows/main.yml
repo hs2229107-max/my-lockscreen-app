@@ -19,6 +19,12 @@ jobs:
         java-version: '17'
         distribution: 'temurin'
 
+    - name: Install Compatible Gradle 8.5
+      run: |
+        wget https://services.gradle.org/distributions/gradle-8.5-bin.zip
+        unzip -q gradle-8.5-bin.zip
+        echo "$GITHUB_WORKSPACE/gradle-8.5/bin" >> $GITHUB_PATH
+
     - name: Setup Android Project Files
       run: |
         # 1. إنشاء هيكلية مشروع الأندرويد القياسية
@@ -36,7 +42,7 @@ jobs:
         find x/ -name "themes.xml" -exec cp {} app/src/main/res/values/ \;
         find x/ -name "device_admin.xml" -exec cp {} app/src/main/res/xml/ \;
 
-        # 3. إنشاء ملفات Gradle متوافقة
+        # 3. إعداد ملفات البناء
         echo 'rootProject.name = "MyLockScreenApp"' > settings.gradle
         echo "include ':app'" >> settings.gradle
 
@@ -102,13 +108,8 @@ jobs:
         </manifest>
         EOF
 
-    - name: Setup Specific Gradle Version (8.2)
-      run: |
-        gradle wrapper --gradle-version 8.2
-        chmod +x gradlew
-
-    - name: Build APK with Gradle Wrapper
-      run: ./gradlew assembleDebug
+    - name: Build APK with Gradle 8.5
+      run: gradle assembleDebug
 
     - name: Upload APK
       uses: actions/upload-artifact@v4
