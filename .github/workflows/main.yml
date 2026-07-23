@@ -19,7 +19,7 @@ jobs:
         java-version: '17'
         distribution: 'temurin'
 
-    - name: Setup Android Project & Build
+    - name: Setup Android Project Files
       run: |
         # 1. إنشاء هيكلية مشروع الأندرويد القياسية
         mkdir -p app/src/main/java/com/hawahi/locker
@@ -36,7 +36,7 @@ jobs:
         find x/ -name "themes.xml" -exec cp {} app/src/main/res/values/ \;
         find x/ -name "device_admin.xml" -exec cp {} app/src/main/res/xml/ \;
 
-        # 3. إنشاء ملفات إعدادات Gradle
+        # 3. إنشاء ملفات Gradle متوافقة
         echo 'rootProject.name = "MyLockScreenApp"' > settings.gradle
         echo "include ':app'" >> settings.gradle
 
@@ -102,11 +102,13 @@ jobs:
         </manifest>
         EOF
 
-    - name: Setup Gradle
-      uses: gradle/actions/setup-gradle@v3
+    - name: Setup Specific Gradle Version (8.2)
+      run: |
+        gradle wrapper --gradle-version 8.2
+        chmod +x gradlew
 
-    - name: Build APK
-      run: gradle assembleDebug
+    - name: Build APK with Gradle Wrapper
+      run: ./gradlew assembleDebug
 
     - name: Upload APK
       uses: actions/upload-artifact@v4
