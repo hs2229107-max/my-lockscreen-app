@@ -19,18 +19,15 @@ jobs:
         java-version: '17'
         distribution: 'temurin'
 
-    - name: Setup Android SDK
-      uses: android-actions/setup-android@v3
-
-    - name: Prepare and Build Project
+    - name: Setup Android Project & Build
       run: |
-        # إنشاء هيكلية مشروع الأندرويد القياسية
+        # 1. إنشاء هيكلية مشروع الأندرويد القياسية
         mkdir -p app/src/main/java/com/hawahi/locker
         mkdir -p app/src/main/res/layout
         mkdir -p app/src/main/res/values
         mkdir -p app/src/main/res/xml
 
-        # نقل ملفاتك إلى مساراتها الصحيحة
+        # 2. نقل ملفاتك المرفوعة داخل مجلد x
         find x/ -name "*.java" -exec cp {} app/src/main/java/com/hawahi/locker/ \;
         find x/ -name "*ctivity_main.xml" -exec cp {} app/src/main/res/layout/activity_main.xml \;
         find x/ -name "lock_screen.xml" -exec cp {} app/src/main/res/layout/ \;
@@ -39,34 +36,22 @@ jobs:
         find x/ -name "themes.xml" -exec cp {} app/src/main/res/values/ \;
         find x/ -name "device_admin.xml" -exec cp {} app/src/main/res/xml/ \;
 
-        # إعداد ملفات البناء
-        cat << 'EOF' > settings.gradle
-        rootProject.name = "MyLockScreenApp"
-        include ':app'
-        EOF
+        # 3. إنشاء ملفات إعدادات Gradle
+        echo 'rootProject.name = "MyLockScreenApp"' > settings.gradle
+        echo "include ':app'" >> settings.gradle
 
         cat << 'EOF' > build.gradle
         buildscript {
-            repositories {
-                google()
-                mavenCentral()
-            }
-            dependencies {
-                classpath 'com.android.tools.build:gradle:8.1.1'
-            }
+            repositories { google(); mavenCentral() }
+            dependencies { classpath 'com.android.tools.build:gradle:8.1.1' }
         }
         allprojects {
-            repositories {
-                google()
-                mavenCentral()
-            }
+            repositories { google(); mavenCentral() }
         }
         EOF
 
         cat << 'EOF' > app/build.gradle
-        plugins {
-            id 'com.android.application'
-        }
+        plugins { id 'com.android.application' }
         android {
             namespace 'com.hawahi.locker'
             compileSdk 34
@@ -84,14 +69,13 @@ jobs:
         }
         EOF
 
-        # إنشاء Manifest
+        # 4. إنشاء ملف AndroidManifest
         cat << 'EOF' > app/src/main/AndroidManifest.xml
         <manifest xmlns:android="http://schemas.android.com/apk/res/android">
             <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
             <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
             <application
                 android:allowBackup="true"
-                android:icon="@mipmap/ic_launcher"
                 android:label="Locker App"
                 android:supportsRtl="true"
                 android:theme="@style/Theme.AppCompat.Light.NoActionBar">
@@ -118,8 +102,11 @@ jobs:
         </manifest>
         EOF
 
-        # تنفيـذ عملية التجميع
-        gradle build
+    - name: Setup Gradle
+      uses: gradle/actions/setup-gradle@v3
+
+    - name: Build APK
+      run: gradle assembleDebug
 
     - name: Upload APK
       uses: actions/upload-artifact@v4
