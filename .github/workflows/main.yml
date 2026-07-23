@@ -33,21 +33,37 @@ jobs:
         mkdir -p app/src/main/res/values
         mkdir -p app/src/main/res/xml
 
-        # 2. نسخ وملائمة جميع ملفات الجافا والتأكد من تسمية MainActivity بشكل صحيح
+        # 2. نقل وتعديل اسم ملفات الجافا
         find x/ -name "*.java" -exec cp {} app/src/main/java/com/hawahi/locker/ \;
         if [ -f app/src/main/java/com/hawahi/locker/ainActivity.java ]; then
             mv app/src/main/java/com/hawahi/locker/ainActivity.java app/src/main/java/com/hawahi/locker/MainActivity.java
         fi
 
-        # 3. نسخ ملفات الـ Layout والـ Resources
-        find x/ -name "*activity_main.xml" -exec cp {} app/src/main/res/layout/activity_main.xml \;
-        find x/ -name "lock_screen.xml" -exec cp {} app/src/main/res/layout/ \; 2>/dev/null || true
+        # 3. نقل كافة ملفات الـ Layout وتوفير activity_main.xml تلقائياً
+        find x/ -name "*.xml" -exec cp {} app/src/main/res/layout/ \;
+        
+        # التأكد من وجود activity_main.xml (إذا كانت تسميته سابقة lock_screen أو غيرها)
+        if [ ! -f app/src/main/res/layout/activity_main.xml ]; then
+            if [ -f app/src/main/res/layout/lock_screen.xml ]; then
+                cp app/src/main/res/layout/lock_screen.xml app/src/main/res/layout/activity_main.xml
+            else
+                cat << 'EOF' > app/src/main/res/layout/activity_main.xml
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+</RelativeLayout>
+EOF
+            fi
+        fi
+
+        # نقل ملفات الموارد الأخرى لأماكنها الصحيحة
         find x/ -name "strings.xml" -exec cp {} app/src/main/res/values/ \; 2>/dev/null || true
         find x/ -name "colors.xml" -exec cp {} app/src/main/res/values/ \; 2>/dev/null || true
         find x/ -name "themes.xml" -exec cp {} app/src/main/res/values/ \; 2>/dev/null || true
         find x/ -name "device_admin.xml" -exec cp {} app/src/main/res/xml/ \; 2>/dev/null || true
 
-        # 4. تفعيل AndroidX وإعداد Gradle
+        # 4. إعداد Gradle و AndroidX
         echo 'android.useAndroidX=true' > gradle.properties
         echo 'android.enableJetifier=true' >> gradle.properties
 
@@ -83,7 +99,7 @@ jobs:
         }
         EOF
 
-        # 5. إنشاء Manifest نظيف ومتوافق
+        # 5. إنشاء ملف AndroidManifest
         cat << 'EOF' > app/src/main/AndroidManifest.xml
         <manifest xmlns:android="http://schemas.android.com/apk/res/android">
             <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
