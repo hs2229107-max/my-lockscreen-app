@@ -27,43 +27,31 @@ jobs:
 
     - name: Setup Android Project Files
       run: |
-        # 1. إنشاء هيكلية المشروع
+        # 1. إنشاء الهيكلية الصحيحة
         mkdir -p app/src/main/java/com/hawahi/locker
         mkdir -p app/src/main/res/layout
         mkdir -p app/src/main/res/values
         mkdir -p app/src/main/res/xml
 
-        # 2. نقل وتعديل اسم ملفات الجافا
+        # 2. نقل ملفات الـ Java وإصلاح ainActivity.java -> MainActivity.java
         find x/ -name "*.java" -exec cp {} app/src/main/java/com/hawahi/locker/ \;
         if [ -f app/src/main/java/com/hawahi/locker/ainActivity.java ]; then
             mv app/src/main/java/com/hawahi/locker/ainActivity.java app/src/main/java/com/hawahi/locker/MainActivity.java
         fi
 
-        # 3. نقل كافة ملفات الـ Layout وتوفير activity_main.xml تلقائياً
-        find x/ -name "*.xml" -exec cp {} app/src/main/res/layout/ \;
-        
-        # التأكد من وجود activity_main.xml (إذا كانت تسميته سابقة lock_screen أو غيرها)
-        if [ ! -f app/src/main/res/layout/activity_main.xml ]; then
-            if [ -f app/src/main/res/layout/lock_screen.xml ]; then
-                cp app/src/main/res/layout/lock_screen.xml app/src/main/res/layout/activity_main.xml
-            else
-                cat << 'EOF' > app/src/main/res/layout/activity_main.xml
-<?xml version="1.0" encoding="utf-8"?>
-<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:layout_width="match_parent"
-    android:layout_height="match_parent">
-</RelativeLayout>
-EOF
-            fi
-        fi
+        # 3. نقل ملفات الـ Layout وإصلاح ctivity_main.xml -> activity_main.xml
+        find x/ -name "*ctivity_main.xml" -exec cp {} app/src/main/res/layout/activity_main.xml \; 2>/dev/null || true
+        find x/ -name "lock_screen.xml" -exec cp {} app/src/main/res/layout/ \; 2>/dev/null || true
 
-        # نقل ملفات الموارد الأخرى لأماكنها الصحيحة
+        # 4. نقل ملفات الـ Values
         find x/ -name "strings.xml" -exec cp {} app/src/main/res/values/ \; 2>/dev/null || true
         find x/ -name "colors.xml" -exec cp {} app/src/main/res/values/ \; 2>/dev/null || true
         find x/ -name "themes.xml" -exec cp {} app/src/main/res/values/ \; 2>/dev/null || true
+
+        # 5. نقل ملف الـ XML (Device Admin)
         find x/ -name "device_admin.xml" -exec cp {} app/src/main/res/xml/ \; 2>/dev/null || true
 
-        # 4. إعداد Gradle و AndroidX
+        # 6. إعداد ملفات Gradle و AndroidX
         echo 'android.useAndroidX=true' > gradle.properties
         echo 'android.enableJetifier=true' >> gradle.properties
 
@@ -99,7 +87,7 @@ EOF
         }
         EOF
 
-        # 5. إنشاء ملف AndroidManifest
+        # 7. إنشاء AndroidManifest متوافق
         cat << 'EOF' > app/src/main/AndroidManifest.xml
         <manifest xmlns:android="http://schemas.android.com/apk/res/android">
             <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
