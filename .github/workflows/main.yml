@@ -1,0 +1,128 @@
+name: Build Android APK
+
+on:
+  push:
+    branches: [ "main", "master" ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Set up JDK 17
+      uses: actions/setup-java@v4
+      with:
+        java-version: '17'
+        distribution: 'temurin'
+
+    - name: Setup Android SDK
+      uses: android-actions/setup-android@v3
+
+    - name: Prepare and Build Project
+      run: |
+        # إنشاء هيكلية مشروع الأندرويد القياسية
+        mkdir -p app/src/main/java/com/hawahi/locker
+        mkdir -p app/src/main/res/layout
+        mkdir -p app/src/main/res/values
+        mkdir -p app/src/main/res/xml
+
+        # نقل ملفاتك إلى مساراتها الصحيحة
+        find x/ -name "*.java" -exec cp {} app/src/main/java/com/hawahi/locker/ \;
+        find x/ -name "*ctivity_main.xml" -exec cp {} app/src/main/res/layout/activity_main.xml \;
+        find x/ -name "lock_screen.xml" -exec cp {} app/src/main/res/layout/ \;
+        find x/ -name "strings.xml" -exec cp {} app/src/main/res/values/ \;
+        find x/ -name "colors.xml" -exec cp {} app/src/main/res/values/ \;
+        find x/ -name "themes.xml" -exec cp {} app/src/main/res/values/ \;
+        find x/ -name "device_admin.xml" -exec cp {} app/src/main/res/xml/ \;
+
+        # إعداد ملفات البناء
+        cat << 'EOF' > settings.gradle
+        rootProject.name = "MyLockScreenApp"
+        include ':app'
+        EOF
+
+        cat << 'EOF' > build.gradle
+        buildscript {
+            repositories {
+                google()
+                mavenCentral()
+            }
+            dependencies {
+                classpath 'com.android.tools.build:gradle:8.1.1'
+            }
+        }
+        allprojects {
+            repositories {
+                google()
+                mavenCentral()
+            }
+        }
+        EOF
+
+        cat << 'EOF' > app/build.gradle
+        plugins {
+            id 'com.android.application'
+        }
+        android {
+            namespace 'com.hawahi.locker'
+            compileSdk 34
+            defaultConfig {
+                applicationId "com.hawahi.locker"
+                minSdk 24
+                targetSdk 34
+                versionCode 1
+                versionName "1.0"
+            }
+        }
+        dependencies {
+            implementation 'androidx.appcompat:appcompat:1.6.1'
+            implementation 'com.google.android.material:material:1.9.0'
+        }
+        EOF
+
+        # إنشاء Manifest
+        cat << 'EOF' > app/src/main/AndroidManifest.xml
+        <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+            <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+            <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
+            <application
+                android:allowBackup="true"
+                android:icon="@mipmap/ic_launcher"
+                android:label="Locker App"
+                android:supportsRtl="true"
+                android:theme="@style/Theme.AppCompat.Light.NoActionBar">
+                <activity android:name=".MainActivity" android:exported="true">
+                    <intent-filter>
+                        <action android:name="android.intent.action.MAIN" />
+                        <category android:name="android.intent.category.LAUNCHER" />
+                    </intent-filter>
+                </activity>
+                <activity android:name=".LockScreenActivity" android:exported="false" />
+                <service android:name=".LockScreenService" android:enabled="true" android:exported="false" />
+                <receiver android:name=".BootReceiver" android:enabled="true" android:exported="true">
+                    <intent-filter>
+                        <action android:name="android.intent.action.BOOT_COMPLETED" />
+                    </intent-filter>
+                </receiver>
+                <receiver android:name=".AdminReceiver" android:permission="android.permission.BIND_DEVICE_ADMIN" android:exported="true">
+                    <meta-data android:name="android.app.device_admin" android:resource="@xml/device_admin" />
+                    <intent-filter>
+                        <action android:name="android.app.action.DEVICE_ADMIN_ENABLED" />
+                    </intent-filter>
+                </receiver>
+            </application>
+        </manifest>
+        EOF
+
+        # تنفيـذ عملية التجميع
+        gradle build
+
+    - name: Upload APK
+      uses: actions/upload-artifact@v4
+      with:
+        name: app-debug-apk
+        path: app/build/outputs/apk/debug/app-debug.apk
