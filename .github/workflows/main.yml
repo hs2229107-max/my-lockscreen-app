@@ -27,13 +27,13 @@ jobs:
 
     - name: Setup Android Project Files
       run: |
-        # 1. إنشاء هيكلية مشروع الأندرويد القياسية
+        # 1. إنشاء هيكلية مشروع الأندرويد
         mkdir -p app/src/main/java/com/hawahi/locker
         mkdir -p app/src/main/res/layout
         mkdir -p app/src/main/res/values
         mkdir -p app/src/main/res/xml
 
-        # 2. نقل ملفاتك المرفوعة داخل مجلد x
+        # 2. نقل ملفاتك المرفوعة
         find x/ -name "*.java" -exec cp {} app/src/main/java/com/hawahi/locker/ \;
         find x/ -name "*ctivity_main.xml" -exec cp {} app/src/main/res/layout/activity_main.xml \;
         find x/ -name "lock_screen.xml" -exec cp {} app/src/main/res/layout/ \;
@@ -42,7 +42,10 @@ jobs:
         find x/ -name "themes.xml" -exec cp {} app/src/main/res/values/ \;
         find x/ -name "device_admin.xml" -exec cp {} app/src/main/res/xml/ \;
 
-        # 3. إعداد ملفات البناء
+        # 3. إعداد ملفات Gradle وتفعيل AndroidX (حل الخطأ الحالي)
+        echo 'android.useAndroidX=true' > gradle.properties
+        echo 'android.enableJetifier=true' >> gradle.properties
+
         echo 'rootProject.name = "MyLockScreenApp"' > settings.gradle
         echo "include ':app'" >> settings.gradle
 
@@ -108,7 +111,7 @@ jobs:
         </manifest>
         EOF
 
-    - name: Build APK with Gradle 8.5
+    - name: Build APK
       run: gradle assembleDebug
 
     - name: Upload APK
